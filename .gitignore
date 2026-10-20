@@ -1,0 +1,19 @@
+# MATLAB created files for autosave, workspace and history
+*.asv
+*.m~
+*.slxc
+*.mex*
+*.mat
+
+# Simulink Code Generation
+slprj/
+sfprj/
+*_ert_rtw/
+*_grt_rtw/
+
+# Output directories
+build/
+bin/
+
+# Crash dumps and logs
+matlab_crash_dump.*
