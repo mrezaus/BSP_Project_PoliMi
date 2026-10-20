@@ -1,6 +1,7 @@
 % =========================================================================
 % SLEEP STAGE CLASSIFICATION & VISUALIZATION PIPELINE (PRESENTATION EDITION)
 % Based on Huang et al. (2014)
+% Author : Mohammadreza Iravani
 % =========================================================================
 
 % 1. Load and Extract Data
@@ -49,7 +50,7 @@ predicted_stages = predict(SVMModel, X_scaled);
 set(0, 'DefaultAxesFontSize', 12, 'DefaultLineLineWidth', 1.5);
 
 % FIGURE 1: Raw vs Preprocessed Signal
-figure('Name', 'Fig 1: Signal Preprocessing', 'Position', [50, 100, 1000, 500]);
+fig1 = figure('Name', 'Fig 1: Signal Preprocessing', 'Position', [50, 100, 1000, 500]);
 sample_epoch = eeg_epochs(40, :); % Select an epoch with rich features
 [b, a] = butter(4, [0.5, 49] / (fs / 2), 'bandpass');
 filtered_epoch = filtfilt(b, a, sample_epoch);
@@ -67,8 +68,7 @@ xlabel('Time (s)'); ylabel('Amplitude (\muV)'); grid on;
 
 
 % FIGURE 2: Clinical Rhythm Decomposition (Intro Slide Material)
-% Decomposes the filtered epoch into AASM scoring bands
-figure('Name', 'Fig 2: Clinical Rhythm Decomposition', 'Position', [100, 100, 1000, 800]);
+fig2 = figure('Name', 'Fig 2: Clinical Rhythm Decomposition', 'Position', [100, 100, 1000, 800]);
 bands = {[1 4], [5 7], [8 12], [12 14], [15 30]};
 band_names = {'Delta (1-4 Hz) - Slow Waves', 'Theta (5-7 Hz) - Light Sleep', ...
               'Alpha (8-12 Hz) - Wakefulness', 'Sigma (12-14 Hz) - Sleep Spindles', ...
@@ -90,7 +90,7 @@ sgtitle('Decomposition of EEG Epoch into Clinical Frequency Bands');
 
 
 % FIGURE 3: Time-Frequency Representation (STFT)
-figure('Name', 'Fig 3: Short-Time Fourier Transform', 'Position', [150, 150, 800, 400]);
+fig3 = figure('Name', 'Fig 3: Short-Time Fourier Transform', 'Position', [150, 150, 800, 400]);
 window = hamming(fs); % 1-second window
 noverlap = fs / 2;    % 0.5-second overlap
 nfft = fs;
@@ -104,17 +104,17 @@ ylim([0 40]); % Cap at 40Hz for better visual focus
 
 
 % FIGURE 4: Feature Space Separability (PCA)
-figure('Name', 'Fig 4: PCA Feature Space', 'Position', [200, 200, 800, 600]);
+fig4 = figure('Name', 'Fig 4: PCA Feature Space', 'Position', [200, 200, 800, 600]);
 [~, score, ~] = pca(X_scaled);
 gscatter(score(:,1), score(:,2), predicted_stages, 'rgbmk', '.....', 20);
 title('Principal Component Analysis: Sleep Stage Clustering');
 xlabel('Principal Component 1'); ylabel('Principal Component 2');
-legend('W', 'N1', 'N2', 'N3', 'REM', 'Location', 'best');
+legend('Location', 'best'); % Warning resolved
 grid on;
 
 
 % FIGURE 5: Full Night Hypnogram
-figure('Name', 'Fig 5: Full Night Hypnogram', 'Position', [250, 250, 1000, 400]);
+fig5 = figure('Name', 'Fig 5: Full Night Hypnogram', 'Position', [250, 250, 1000, 400]);
 stage_map = containers.Map({'W', 'REM', 'N1', 'N2', 'N3'}, [5, 4, 3, 2, 1]);
 numeric_stages = zeros(num_epochs, 1);
 for i = 1:num_epochs
@@ -131,7 +131,7 @@ grid on;
 
 
 % FIGURE 6: Zoomed Hypnogram (First 2 Hours / 1 Sleep Cycle)
-figure('Name', 'Fig 6: Zoomed Hypnogram', 'Position', [300, 300, 800, 400]);
+fig6 = figure('Name', 'Fig 6: Zoomed Hypnogram', 'Position', [300, 300, 800, 400]);
 stairs(time_hrs, numeric_stages, 'LineWidth', 2.5, 'Color', [0.8500 0.3250 0.0980]);
 set(gca, 'YTick', 1:5, 'YTickLabel', {'N3', 'N2', 'N1', 'REM', 'W'});
 ylim([0.5 5.5]); 
@@ -144,6 +144,20 @@ grid on;
 text(0.3, 4.5, '\leftarrow Sleep Onset (N1)', 'FontSize', 11, 'FontWeight', 'bold');
 text(0.8, 1.5, '\leftarrow Deep Sleep (N3)', 'FontSize', 11, 'FontWeight', 'bold');
 text(1.5, 3.5, '\leftarrow First REM Period', 'FontSize', 11, 'FontWeight', 'bold');
+
+
+% =========================================================================
+% FIGURE EXPORT TO PNG
+% =========================================================================
+fprintf('Saving high-resolution presentation figures to current folder...\n');
+pause(1); % Brief pause to ensure all figures are fully rendered before saving
+exportgraphics(fig1, 'Fig1_Preprocessing.png', 'Resolution', 300);
+exportgraphics(fig2, 'Fig2_RhythmDecomposition.png', 'Resolution', 300);
+exportgraphics(fig3, 'Fig3_STFT_Spectrogram.png', 'Resolution', 300);
+exportgraphics(fig4, 'Fig4_PCA_Clustering.png', 'Resolution', 300);
+exportgraphics(fig5, 'Fig5_FullHypnogram.png', 'Resolution', 300);
+exportgraphics(fig6, 'Fig6_ZoomedHypnogram.png', 'Resolution', 300);
+fprintf('All presentation images saved successfully as PNGs!\n');
 
 
 % =========================================================================
