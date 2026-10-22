@@ -1,5 +1,5 @@
 % =========================================================================
-% SLEEP STAGE CLASSIFICATION (UNSUPERVISED EDITION)
+% SLEEP STAGE CLASSIFICATION (FEATURE BASED METHOD)
 % Based on Huang et al. (2014) & Dement et al. (1957)
 % Author : Mohammadreza Iravani
 % =========================================================================
