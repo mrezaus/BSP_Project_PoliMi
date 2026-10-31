@@ -1,12 +1,14 @@
 % =========================================================================
-% SLEEP STAGE ANALYSIS (UNIFIED VERSION)
-% Preprocessing & Hypnogram by MReza
-% Welch PSD, Frequency Bands & Statistical Analysis by Negin
+% SLEEP STAGE ANALYSIS 
+% BSP_Team04Topic01_Code
+% TOPIC 1:	EEG during sleep
+% Detect the different stages of sleep based on changes in the EEG signal characteristics.
+% Group Members: Ali Jamshidian, Negin Rajabi , Mohammadreza Iravani, Narges Abdoliashtiani
 % =========================================================================
 
 clearvars; close all; clc;
 
-%% 1. PREPROCESSING (From MReza's Code)
+%% 1. PREPROCESSING
 fprintf('Loading data.mat and NotchFilter.mat...\n');
 load('data.mat', 'dati');   
 Fs = double(dati.fs);               
@@ -32,7 +34,6 @@ epoch_sec = 30;
 window_length = round(Fs * epoch_sec);
 nEpochs = floor(length(EEG_filtered) / window_length);
 
-% --- Negin's Variables (Welch PSD & Temporal Stats) ---
 bandNames = {'Delta','Theta','Alpha','Sigma','Beta'}; 
 bands = [ 0.5 4; 4 8; 8 12; 12 15; 15 30];
 nBands = size(bands, 1);
@@ -46,7 +47,6 @@ welchWindow = hamming(round(Fs));
 welchOverlap = floor(length(welchWindow)/2); 
 nfftWelch = 2048;
 
-% --- MReza's Variables (Features for Hypnogram & Plotting) ---
 % STFT parameters (Defined globally to prevent plotting errors)
 segment_length = round(Fs * 1);    
 noverlap_stft  = round(Fs * 0.5);        
@@ -66,7 +66,7 @@ Plot_Beta  = zeros(1, nEpochs);
 
 fprintf('Processing %d epochs for PSD and Hypnogram features...\n', nEpochs);
 
-%% 3. MAIN LOOP: NEGIN'S PSD + MREZA'S HYPNOGRAM FEATURES
+%% 3. MAIN LOOP: HYPNOGRAM FEATURES
 for k = 1:nEpochs
     start_idx = (k - 1) * window_length + 1;
     end_idx   = k * window_length;
@@ -74,7 +74,7 @@ for k = 1:nEpochs
     time_min(k) = (start_idx + window_length/2) / (Fs * 60);
     
     % ========================================================
-    % A. Negin's Statistical & Welch PSD Analysis
+    % A. Statistical & Welch PSD Analysis
     % ========================================================
     RMS_val(k) = sqrt(mean(epoch_data.^2));
     SignalStd(k) = std(epoch_data);
@@ -92,7 +92,7 @@ for k = 1:nEpochs
     end
     
     % ========================================================
-    % B. MReza's STFT Features (For AASM Stage Detection & Plots)
+    % B. STFT Features (For AASM Stage Detection & Plots)
     % ========================================================
     [PSD_stft, f_s] = spectrogram(epoch_data, hamming(segment_length), noverlap_stft, nfft_stft, Fs, 'yaxis');
     PSD_stft = abs(PSD_stft).^2;
@@ -103,7 +103,7 @@ for k = 1:nEpochs
     alpha_pow = sum(Norm_PSD((f_s>=8   & f_s<=12), :), 1);
     sigma_pow = sum(Norm_PSD((f_s>=12  & f_s<=14), :), 1);
     
-    % MReza's percentiles based on Huang 2014
+    % Percentiles based on Huang 2014
     sw_sorted = sort(sw_pow, 'ascend');
     STFT_SlowWave(k) = mean(sw_sorted(end - floor(0.8*59) + 1 : end)); % Upper 80%
     
@@ -120,7 +120,7 @@ for k = 1:nEpochs
     Plot_Beta(k)  = mean(sum(Norm_PSD((f_s>=15  & f_s<=30), :), 1));
 end
 
-%% 4. KNOWLEDGE-BASED STAGE DETECTION (MReza's Logic)
+%% 4. KNOWLEDGE-BASED STAGE DETECTION
 fprintf('Detecting sleep stages...\n');
 Detected_Stage = strings(1, nEpochs);
 
@@ -143,23 +143,23 @@ end
 %% 5. GENERATE PRESENTATION FIGURES
 fprintf('Saving figures for presentation...\n');
 
-% --- Slide 1: Preprocessing (MReza) ---
+% --- Slide 1: Preprocessing ---
 fig1 = figure('Name', 'Preprocessing', 'Position', [100 100 800 500]);
 t_30s = (0:window_length-1) / Fs;
-subplot(2,1,1); plot(t_30s, EEG_raw(1:window_length), 'Color', [0.6 0.6 0.6]);
+subplot(2,1,1); plot(t_30s, EEG_raw(1:window_length), 'w');
 title('Raw EEG Signal'); xlabel('Time [s]'); ylabel('Amplitude'); grid on;
-subplot(2,1,2); plot(t_30s, EEG_filtered(1:window_length), 'b');
+subplot(2,1,2); plot(t_30s, EEG_filtered(1:window_length), 'c');
 title('Filtered EEG (Detrend + Notch + Bandpass)'); xlabel('Time [s]'); ylabel('Amplitude'); grid on;
 saveas(fig1, 'Slide1_Preprocessing.png');
 
-% --- Slide 2: Global Welch PSD (Negin) ---
+% --- Slide 2: Global Welch PSD ---
 fig2 = figure('Name', 'Global Welch PSD', 'Position', [150 150 800 450]);
 [pxx_glob, f_glob] = pwelch(EEG_filtered, welchWindow, welchOverlap, nfftWelch, Fs);
-plot(f_glob, 10*log10(pxx_glob+eps), 'c', 'LineWidth', 2);
+plot(f_glob, 10*log10(pxx_glob+eps), 'w', 'LineWidth', 2);
 xlim([0 35]); 
 title('Global Welch Power Spectral Density (PSD)');
 xlabel('Frequency (Hz)'); ylabel('PSD (dB/Hz)'); grid on;
-xline(4, '--b', 'Delta'); 
+xline(4, '--c', 'Delta'); 
 xline(8, '--g', 'Theta'); 
 xline(12, '--r', 'Alpha'); 
 xline(15, '--m', 'Sigma'); 
@@ -179,7 +179,7 @@ title('STFT Spectrogram');
 ylabel('Frequency (Hz)');
 cb = colorbar; cb.Label.String = 'Power/frequency (dB/Hz)';
 
-ax(2) = subplot(6,1,2); plot(time_min, Plot_Delta, 'b', 'LineWidth', 1.5); 
+ax(2) = subplot(6,1,2); plot(time_min, Plot_Delta, 'c', 'LineWidth', 1.5); 
 title('Delta Band (0.5 - 4 Hz)'); ylabel('Power'); grid on;
 
 ax(3) = subplot(6,1,3); plot(time_min, Plot_Theta, 'g', 'LineWidth', 1.5); 
@@ -202,7 +202,7 @@ xlim(ax(1), [0, time_min(end)]);
 
 saveas(fig3, 'Slide3_STFT_All_Bands.png');
 
-% --- Slide 4: Statistical Correlation Matrix (Negin) ---
+% --- Slide 4: Statistical Correlation Matrix ---
 fig4 = figure('Name', 'Correlation Matrix', 'Position', [250 250 600 500]);
 corrMatrix = corr(RelativeBandPower, 'Rows', 'pairwise');
 imagesc(corrMatrix); colorbar; clim([-1 1]); colormap('parula');
@@ -211,19 +211,19 @@ xticklabels(bandNames); yticklabels(bandNames);
 title('Correlation of Relative Band Powers');
 for r = 1:nBands 
     for c = 1:nBands 
-        text(c, r, sprintf('%.2f', corrMatrix(r,c)), 'HorizontalAlignment', 'center', 'Color', 'w', 'FontWeight', 'bold');
+        text(c, r, sprintf('%.2f', corrMatrix(r,c)), 'HorizontalAlignment', 'center', 'Color', 'k', 'FontWeight', 'bold');
     end 
 end
 saveas(fig4, 'Slide4_Correlation_Matrix.png');
 
-% --- Slide 5: Hypnogram Output (MReza) ---
+% --- Slide 5: Hypnogram Output ---
 fig5 = figure('Name', 'Hypnogram', 'Position', [300 300 900 400]);
 stage_num = zeros(1, nEpochs);
 stage_num(Detected_Stage == "Wake") = 0;
 stage_num(Detected_Stage == "N1 / REM") = -1;
 stage_num(Detected_Stage == "N2") = -2;
 stage_num(Detected_Stage == "N3") = -3;
-stairs(time_min, stage_num, 'LineWidth', 2, 'Color', 'b');
+stairs(time_min, stage_num, 'LineWidth', 2, 'Color', 'c');
 yticks([-3, -2, -1, 0]); yticklabels({'N3 (Deep)', 'N2 (Light)', 'N1 / REM', 'Wake'});
 ylim([-3.5 0.5]); xlabel('Time [minutes]'); ylabel('Sleep Stage');
 title('Automated Hypnogram (AASM Rules)'); grid on;
